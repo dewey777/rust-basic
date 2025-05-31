@@ -4,16 +4,22 @@ pub struct ParsedStatement {
 }
 
 pub fn parse(code: &str) -> ParsedStatement {
-    // 실제 파서 대신 간단한 더미 파싱
-    if code.trim().starts_with("let") {
+    let trimmed = code.trim();
+
+    if trimmed.starts_with("let") {
         ParsedStatement {
             kind: "variable_declaration".to_string(),
-            content: code.trim().to_string(),
+            content: trimmed.to_string(),
+        }
+    } else if trimmed.starts_with("fn") {
+        ParsedStatement {
+            kind: "function_definition".to_string(),
+            content: trimmed.to_string(),
         }
     } else {
         ParsedStatement {
             kind: "unknown".to_string(),
-            content: code.trim().to_string(),
+            content: trimmed.to_string(),
         }
     }
 }
