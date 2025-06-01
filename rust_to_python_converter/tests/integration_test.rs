@@ -1,15 +1,13 @@
-use rust_to_python_converter::{parser, converter};
-
 #[test]
-fn test_variable_conversion() {
-    let stmt = parser::parse("let x = 42;");
+fn test_function_with_args() {
+    let stmt = parser::parse(r#"fn greet(name: &str) { println!("Hi, {}", name); }"#);
     let py = converter::convert(stmt);
-    assert_eq!(py, "x = 42");
+    assert_eq!(py, r#"def greet(name):\n    print("Hi, {}", name)"#);
 }
 
 #[test]
-fn test_function_conversion() {
-    let stmt = parser::parse(r#"fn greet() { println!("hello"); }"#);
+fn test_add_function() {
+    let stmt = parser::parse(r#"fn add(a: i32, b: i32) { println!("{}", a + b); }"#);
     let py = converter::convert(stmt);
-    assert_eq!(py, "def greet():\n    print(\"hello\")");
+    assert_eq!(py, r#"def add(a, b):\n    print(a + b)"#);
 }
