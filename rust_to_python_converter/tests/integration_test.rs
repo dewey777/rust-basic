@@ -6,3 +6,10 @@ fn test_variable_conversion() {
     let py = converter::convert(stmt);
     assert_eq!(py, "x = 42");
 }
+
+#[test]
+fn test_function_conversion() {
+    let stmt = parser::parse(r#"fn greet() { println!("hello"); }"#);
+    let py = converter::convert(stmt);
+    assert_eq!(py, "def greet():\n    print(\"hello\")");
+}
