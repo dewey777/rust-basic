@@ -22,36 +22,50 @@ pub fn convert(stmt: ParsedStatement) -> String {
         "function_definition" => {
             let code = stmt.content;
 
+            // 함수 이름 추출
             let name_start = code.find("fn ").unwrap() + 3;
             let name_end = code[name_start..].find('(').unwrap() + name_start;
             let name = &code[name_start..name_end].trim();
 
+            // 파라미터 추출
             let param_start = name_end + 1;
             let param_end = code[param_start..].find(')').unwrap() + param_start;
             let param_str = &code[param_start..param_end];
-
             let params: Vec<String> = param_str
                 .split(',')
-                .map(|p| {
-                    p.trim()
-                        .split(':')
-                        .next()
-                        .unwrap_or("")
-                        .trim()
-                        .to_string()
-                })
+                .map(|p| p.split(':').next().unwrap().trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect();
+
             let python_params = params.join(", ");
 
+            // 함수 본문 추출
             let body_start = code.find('{').unwrap() + 1;
-            let body_end = code.rfind('}').unwrap_or(code.len());
+            let body_end = code.rfind('}').unwrap();
             let body = &code[body_start..body_end].trim();
 
-            let python_body = body
-                .replace("println!", "print")
-                .replace(";", "")
-                .replace("{}", "{}");
+            // println! 처리
+            let python_body = if body.contains("println!") {
+                let print_start = body.find('!').unwrap() + 1;
+                let content = &body[print_start..]
+                    .trim()
+                    .trim_start_matches('(')
+                    .trim_end_matches(')')
+                    .trim_matches('"');
+                // `"Hello, {}"` 와 변수
+                let parts: Vec<&str> = content.split(',').map(|s| s.trim()).collect();
+
+                if parts.len() >= 2 {
+                    let fmt = parts[0];
+                    let mut i = 1;
+                    let f_string = fmt.replace("{}", &format!("{{{}}}", parts[i]));
+                    format!("print(f\"{}\")", f_string)
+                } else {
+                    format!("print(\"{}\")", content)
+                }
+            } else {
+                body.to_string()
+            };
 
             format!("def {}({}):\n    {}", name, python_params, python_body)
         }
