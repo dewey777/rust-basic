@@ -1,76 +1,65 @@
 use crate::parser::ParsedStatement;
 
-
 pub fn convert(stmt: ParsedStatement) -> String {
     match stmt.kind.as_str() {
-        "variable_declaration" => {
-            let cleaned = stmt.content
-                .replace("let ", "")
-                .replace(";", "");
+        "struct_declaration" => {
+            let name = extract_struct_name(&stmt.content);
+            let fields = extract_struct_fields(&stmt.content);
+            let mut py = format!("class {}:\n    def __init__(self", name);
+            for (field, _) in &fields {
+                py += &format!(", {}", field);
+            }
+            py += "):\n";
+            for (field, _) in &fields {
+                py += &format!("        self.{} = {}\n", field, field);
+            }
+            py
+        }
+        "enum_declaration" => {
+            let name = extract_enum_name(&stmt.content);
+            format!(
+                "# Enum (manual conversion needed)\nclass {}:\n    pass",
+                name
+            )
+        }
+        "trait_declaration" => {
+            let name = extract_trait_name(&stmt.content);
+            format!(
+                "from abc import ABC, abstractmethod\n\nclass {}(ABC):\n    @abstractmethod\n    def method(self):\n        pass",
+                name
+            )
+        }
+        _ => "# Unsupported statement".to_string(),
+    }
+}
 
-            let parts: Vec<&str> = cleaned
-                .split('=')
-                .map(|s| s.trim())
-                .collect();
+fn extract_struct_name(content: &str) -> String {
+    content.split_whitespace().nth(1).unwrap_or("Unnamed").to_string()
+}
 
-            if parts.len() == 2 {
-                format!("{} = {}", parts[0], parts[1])
-            } else {
-                "# 변환 실패: 구문 오류".to_string()
+fn extract_struct_fields(content: &str) -> Vec<(String, String)> {
+    let mut fields = Vec::new();
+    if let Some(start) = content.find('{') {
+        if let Some(end) = content.find('}') {
+            let body = &content[start + 1..end];
+            for line in body.lines() {
+                let line = line.trim().replace(",", "");
+                if line.is_empty() {
+                    continue;
+                }
+                if let Some((name, typ)) = line.split_once(":") {
+                    fields.push((name.trim().to_string(), typ.trim().to_string()));
+                }
             }
         }
-
-        "function_definition" => {
-            let code = stmt.content;
-
-            // 함수 이름 추출
-            let name_start = code.find("fn ").unwrap() + 3;
-            let name_end = code[name_start..].find('(').unwrap() + name_start;
-            let name = &code[name_start..name_end].trim();
-
-            // 파라미터 추출
-            let param_start = name_end + 1;
-            let param_end = code[param_start..].find(')').unwrap() + param_start;
-            let param_str = &code[param_start..param_end];
-            let params: Vec<String> = param_str
-                .split(',')
-                .map(|p| p.split(':').next().unwrap().trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect();
-
-            let python_params = params.join(", ");
-
-            // 함수 본문 추출
-            let body_start = code.find('{').unwrap() + 1;
-            let body_end = code.rfind('}').unwrap();
-            let body = &code[body_start..body_end].trim();
-
-            // println! 처리
-            let python_body = if body.contains("println!") {
-                let print_start = body.find('!').unwrap() + 1;
-                let content = &body[print_start..]
-                    .trim()
-                    .trim_start_matches('(')
-                    .trim_end_matches(')')
-                    .trim_matches('"');
-                // `"Hello, {}"` 와 변수
-                let parts: Vec<&str> = content.split(',').map(|s| s.trim()).collect();
-
-                if parts.len() >= 2 {
-                    let fmt = parts[0];
-                    let mut i = 1;
-                    let f_string = fmt.replace("{}", &format!("{{{}}}", parts[i]));
-                    format!("print(f\"{}\")", f_string)
-                } else {
-                    format!("print(\"{}\")", content)
-                }
-            } else {
-                body.to_string()
-            };
-
-            format!("def {}({}):\n    {}", name, python_params, python_body)
-        }
-
-        _ => "# 지원하지 않는 구문입니다.".to_string(),
     }
+    fields
+}
+
+fn extract_enum_name(content: &str) -> String {
+    content.split_whitespace().nth(1).unwrap_or("UnnamedEnum").to_string()
+}
+
+fn extract_trait_name(content: &str) -> String {
+    content.split_whitespace().nth(1).unwrap_or("UnnamedTrait").to_string()
 }

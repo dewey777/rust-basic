@@ -3,17 +3,22 @@ pub struct ParsedStatement {
     pub content: String,
 }
 
-pub fn parse(code: &str) -> ParsedStatement {
-    let trimmed = code.trim();
+pub fn parse_statement(input: &str) -> ParsedStatement {
+    let trimmed = input.trim();
 
-    if trimmed.starts_with("let") {
+    if trimmed.starts_with("struct") {
         ParsedStatement {
-            kind: "variable_declaration".to_string(),
+            kind: "struct_declaration".to_string(),
             content: trimmed.to_string(),
         }
-    } else if trimmed.starts_with("fn") {
+    } else if trimmed.starts_with("enum") {
         ParsedStatement {
-            kind: "function_definition".to_string(),
+            kind: "enum_declaration".to_string(),
+            content: trimmed.to_string(),
+        }
+    } else if trimmed.starts_with("trait") {
+        ParsedStatement {
+            kind: "trait_declaration".to_string(),
             content: trimmed.to_string(),
         }
     } else {
