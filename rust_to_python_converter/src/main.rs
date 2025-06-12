@@ -1,19 +1,24 @@
 mod converter;
 mod parser;
 
-use std::env;
-use parser::parse_statement;
-use converter::convert;
+use std::fs;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Usage: cargo run -- '<rust code snippet>'");
-        return;
+    let input_path = "sample.rs";
+    let output_path = "output.py";
+
+    let source = fs::read_to_string(input_path).expect("Failed to read Rust file");
+
+    let mut output_lines = Vec::new();
+
+    for line in source.lines() {
+        let parsed = parser::parse_statement(line);
+        let python = converter::convert(parsed);
+        output_lines.push(python);
     }
 
-    let input = &args[1];
-    let parsed = parse_statement(input);
-    let python_code = convert(parsed);
-    println!("{}", python_code);
+    let result = output_lines.join("\n\n");
+    fs::write(output_path, result).expect("Failed to write Python file");
+
+    println!("Conversion completed! Output saved to {}", output_path);
 }
