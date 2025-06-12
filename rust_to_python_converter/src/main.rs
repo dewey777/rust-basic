@@ -1,18 +1,19 @@
-mod parser;
 mod converter;
+mod parser;
 
 use std::env;
+use parser::parse_statement;
+use converter::convert;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        println!("❗ 사용법: cargo run -- <rust_code>");
+        println!("Usage: cargo run -- '<rust code snippet>'");
         return;
     }
 
-    let input_code = &args[1];
-    let parsed = parser::parse(input_code);
-    let python_code = converter::convert(parsed);
-
-    println!("✅ 변환된 Python 코드:\n{}", python_code);
+    let input = &args[1];
+    let parsed = parse_statement(input);
+    let python_code = convert(parsed);
+    println!("{}", python_code);
 }
