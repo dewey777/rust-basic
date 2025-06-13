@@ -1,19 +1,14 @@
-fn main() {
-    let name = "Rust";
-    let mut count = 5;
+fn main(){
+    println!("Hello, rust!");
 
-    println!("Hello, {}!", name);
+    let a = 5;
+    let mut b = 10;
 
-    for i in 0..count {
-        println!("Count: {}", i);
-    }
+    println!("a: {}, b: {}", a, b);
+    b = 1412;
 
-    count = count + 1;
-    println!("Final count: {}", count);
+    println!("b:{}",b);
 
-    greet("Alice");
-}
-
-fn greet(name: &str) {
-    println!("Nice to meet you, {}!", name);
+    const PI: f64 = 3.1415;
+    println!("PI상수 : {}",PI);
 }
